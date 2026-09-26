@@ -3239,6 +3239,8 @@
     "roundRobin": "Round Robin",
     "random": "Random",
     "leastLatency": "Least Latency",
+    "jev": "Jev System One",
+    "jevDesc": "Intelligent routing using TypeSafe Jev System One to select the cheapest model with high probability of success",
     "comboName": "Combo Name",
     "comboNamePlaceholder": "my-combo",
     "comboDescription": "Description",

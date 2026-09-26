@@ -280,6 +280,9 @@ export async function applyStrategyOrdering(
       "COMBO",
       `Quota-share ordering: ${orderedTargets[0]?.modelStr}${orderedTargets[0]?.connectionId ? ` (${orderedTargets[0].connectionId})` : ""} selected (DRR+P2C)`
     );
+  } else if (strategy === "jev" || strategy === "system-one" || strategy === "jev-system-one") {
+    const { applyJevRouting } = await import("../jevRouter.ts");
+    orderedTargets = await applyJevRouting(orderedTargets, body, combo, config, log);
   }
 
   return { orderedTargets, quotaShareRelease };

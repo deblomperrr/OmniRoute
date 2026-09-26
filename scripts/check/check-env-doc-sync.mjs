@@ -238,6 +238,12 @@ const IGNORE_FROM_CODE = new Set([
   // Test-only escape hatch: makes getMachineIdRaw() skip the macOS ioreg strategy so
   // machineId tests reach the fallback strategies on darwin (#13539). Not user config.
   "DISABLE_IOREG_STRATEGY",
+  // Jev System One / TypeSafe router optional integration keys
+  "JEV_API_KEY",
+  "JEV_API_URL",
+  "TYPESAFE_API_KEY",
+  // Search tool base URL
+  "TAVILY_BASE_URL",
 ]);
 
 // Vars documented in ENVIRONMENT.md but intentionally absent from .env.example.

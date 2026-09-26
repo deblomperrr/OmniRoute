@@ -19,6 +19,7 @@ export const ROUTING_STRATEGY_VALUES = [
   "cache-optimized",
   "fusion",
   "pipeline",
+  "jev",
 ] as const;
 
 export type RoutingStrategyValue = (typeof ROUTING_STRATEGY_VALUES)[number];
@@ -71,6 +72,7 @@ export function normalizeRoutingStrategy(value: unknown): AnyRoutingStrategyValu
   if (normalized === "usage") return "least-used";
   if (normalized === "context") return "context-optimized";
   if (normalized === "weekly-reset" || normalized === "reset-window-order") return "reset-window";
+  if (normalized === "system-one" || normalized === "jev-system-one") return "jev";
   // Internal strategies (e.g. quota-share) are preserved verbatim, never stripped
   // to "priority", so system-minted combos resolve to their dedicated dispatch.
   if ((INTERNAL_ROUTING_STRATEGY_VALUES as readonly string[]).includes(normalized))
@@ -228,6 +230,13 @@ export const ROUTING_STRATEGIES: RoutingStrategyOption[] = [
     combosDescKey: "pipelineDesc",
     settingsDescKey: "pipelineDesc",
     icon: "linear_scale",
+  },
+  {
+    value: "jev",
+    labelKey: "jev",
+    combosDescKey: "jevDesc",
+    settingsDescKey: "jevDesc",
+    icon: "psychology",
   },
 ];
 

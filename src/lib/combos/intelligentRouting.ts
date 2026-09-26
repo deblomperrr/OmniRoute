@@ -1,6 +1,6 @@
 type JsonRecord = Record<string, unknown>;
 
-export const INTELLIGENT_STRATEGIES = ["auto", "lkgp"] as const;
+export const INTELLIGENT_STRATEGIES = ["auto", "lkgp", "jev"] as const;
 export const INTELLIGENT_ROUTING_FILTERS = ["all", "intelligent", "deterministic"] as const;
 
 export type IntelligentRoutingFilter = (typeof INTELLIGENT_ROUTING_FILTERS)[number];

@@ -64,5 +64,6 @@ export const HANDLED_COMBO_STRATEGIES: readonly string[] = [
   "cache-optimized",
   "fusion",
   "pipeline",
+  "jev",
   "quota-share",
 ] as const;

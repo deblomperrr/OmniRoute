@@ -7,6 +7,7 @@ const { getModePack } = await import("../../open-sse/services/autoCombo/modePack
 test("getStrategyCategory classifies intelligent and deterministic strategies correctly", () => {
   assert.equal(intelligentRouting.getStrategyCategory("auto"), "intelligent");
   assert.equal(intelligentRouting.getStrategyCategory("lkgp"), "intelligent");
+  assert.equal(intelligentRouting.getStrategyCategory("jev"), "intelligent");
 
   [
     "priority",
