@@ -502,8 +502,8 @@ jobs:
   publish-npm:
     name: Publish to npm
     needs: [validate, release]
-    # A re-dispatch that only re-attaches desktop assets must not publish the npm package again.
-    if: ${{ github.event_name != 'workflow_dispatch' || inputs.publish_npm }}
+    # Disabled per user request: do not push to npm
+    if: false
     permissions:
       # Must be `write`, not `read`: this job calls the reusable npm-publish.yml whose
       # `publish` job needs `contents: write` (gh release upload — attach the SBOM, #3874).

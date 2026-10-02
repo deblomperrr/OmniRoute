@@ -25,6 +25,11 @@ on:
         required: false
         type: boolean
         default: false
+      force:
+        description: "Force rebuild even if image already exists on Docker Hub"
+        required: false
+        type: boolean
+        default: false
 
 # One publish per ref. A merge storm used to fan out 8 concurrent hosted builds,
 # every one OOM-killing `npm run build` inside BuildKit (#11976). The :next
@@ -48,7 +53,7 @@ jobs:
       promote_latest: ${{ steps.version.outputs.promote_latest }}
       skip: ${{ steps.version.outputs.skip }}
     env:
-      IMAGE_NAME: ${{ vars.DOCKERHUB_REPOSITORY || secrets.DOCKERHUB_REPOSITORY || (secrets.DOCKERHUB_USERNAME != '' && format('{0}/omniroute', secrets.DOCKERHUB_USERNAME)) || 'diegosouzapw/omniroute' }}
+      IMAGE_NAME: ${{ vars.DOCKERHUB_REPOSITORY || secrets.DOCKERHUB_REPOSITORY || ((secrets.DOCKERHUB_USERNAME || secrets.DOCKER_USERNAME) != '' && format('{0}/omniroute', secrets.DOCKERHUB_USERNAME || secrets.DOCKER_USERNAME)) || format('{0}/omniroute', github.repository_owner) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -65,6 +70,7 @@ jobs:
           REF_TYPE: ${{ github.ref_type }}
           INPUT_VERSION: ${{ inputs.version }}
           PROMOTE_INPUT: ${{ inputs.promote_latest }}
+          FORCE_INPUT: ${{ inputs.force }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           set -euo pipefail
@@ -111,7 +117,7 @@ jobs:
           # 3) Skip immutable version tags that already exist. Floating `main`
           # and `next` channels are intentionally rebuilt on every matching push.
           SKIP="false"
-          if [ "$VERSION" != "main" ] && [ "$VERSION" != "next" ]; then
+          if [ "${FORCE_INPUT:-false}" != "true" ] && [ "$VERSION" != "main" ] && [ "$VERSION" != "next" ]; then
             if docker manifest inspect "${IMAGE_NAME}:${VERSION}" >/dev/null 2>&1; then
               echo "Image ${IMAGE_NAME}:${VERSION} already exists on Docker Hub — skipping rebuild."
               SKIP="true"
@@ -154,7 +160,7 @@ jobs:
           - platform: linux/arm64
             arch: arm64
     env:
-      IMAGE_NAME: ${{ vars.DOCKERHUB_REPOSITORY || secrets.DOCKERHUB_REPOSITORY || (secrets.DOCKERHUB_USERNAME != '' && format('{0}/omniroute', secrets.DOCKERHUB_USERNAME)) || 'diegosouzapw/omniroute' }}
+      IMAGE_NAME: ${{ vars.DOCKERHUB_REPOSITORY || secrets.DOCKERHUB_REPOSITORY || ((secrets.DOCKERHUB_USERNAME || secrets.DOCKER_USERNAME) != '' && format('{0}/omniroute', secrets.DOCKERHUB_USERNAME || secrets.DOCKER_USERNAME)) || format('{0}/omniroute', github.repository_owner) }}
       GHCR_IMAGE_NAME: ghcr.io/${{ github.repository }}
     steps:
       - name: Checkout
@@ -172,8 +178,8 @@ jobs:
       - name: Login to Docker Hub
         uses: docker/login-action@v4.6.0
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: ${{ secrets.DOCKERHUB_USERNAME || secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN || secrets.DOCKER_PASSWORD }}
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v4.6.0
@@ -351,7 +357,7 @@ jobs:
       packages: write
       security-events: write
     env:
-      IMAGE_NAME: ${{ vars.DOCKERHUB_REPOSITORY || secrets.DOCKERHUB_REPOSITORY || (secrets.DOCKERHUB_USERNAME != '' && format('{0}/omniroute', secrets.DOCKERHUB_USERNAME)) || 'diegosouzapw/omniroute' }}
+      IMAGE_NAME: ${{ vars.DOCKERHUB_REPOSITORY || secrets.DOCKERHUB_REPOSITORY || ((secrets.DOCKERHUB_USERNAME || secrets.DOCKER_USERNAME) != '' && format('{0}/omniroute', secrets.DOCKERHUB_USERNAME || secrets.DOCKER_USERNAME)) || format('{0}/omniroute', github.repository_owner) }}
       GHCR_IMAGE_NAME: ghcr.io/${{ github.repository }}
       VERSION: ${{ needs.prepare.outputs.version }}
       PROMOTE_LATEST: ${{ needs.prepare.outputs.promote_latest }}
@@ -368,8 +374,8 @@ jobs:
       - name: Login to Docker Hub
         uses: docker/login-action@v4.6.0
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: ${{ secrets.DOCKERHUB_USERNAME || secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN || secrets.DOCKER_PASSWORD }}
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v4.6.0
@@ -590,10 +596,11 @@ jobs:
         # Only refresh README/description when we actually promote :latest
         # (avoids overwriting from main, next, or back-fill builds).
         if: needs.prepare.outputs.promote_latest == 'true'
+        continue-on-error: true
         uses: peter-evans/dockerhub-description@v5
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-          repository: ${{ vars.DOCKERHUB_REPOSITORY || secrets.DOCKERHUB_REPOSITORY || (secrets.DOCKERHUB_USERNAME != '' && format('{0}/omniroute', secrets.DOCKERHUB_USERNAME)) || 'diegosouzapw/omniroute' }}
+          username: ${{ secrets.DOCKERHUB_USERNAME || secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN || secrets.DOCKER_PASSWORD }}
+          repository: ${{ vars.DOCKERHUB_REPOSITORY || secrets.DOCKERHUB_REPOSITORY || ((secrets.DOCKERHUB_USERNAME || secrets.DOCKER_USERNAME) != '' && format('{0}/omniroute', secrets.DOCKERHUB_USERNAME || secrets.DOCKER_USERNAME)) || format('{0}/omniroute', github.repository_owner) }}
           short-description: "OmniRoute — Unified AI proxy. Route any LLM through one endpoint."
           readme-filepath: ./README.md
