@@ -188,6 +188,16 @@ export const KIMI_CODING_CONFIG = {
   tokenUrl: "https://auth.kimi.com/api/oauth/token",
 };
 
+// OmniRush OAuth Configuration (Device Code Flow)
+export const OMNIRUSH_CONFIG = {
+  clientId: resolvePublicCred("omnirush_id", "OMNIRUSH_OAUTH_CLIENT_ID"),
+  deviceCodeUrl: "https://omnirush.ai/omnirush/device/authorize",
+  tokenUrl: "https://omnirush.ai/omnirush/device/token",
+  refreshUrl: "https://omnirush.ai/omnirush/device/refresh",
+  userInfoUrl: "https://omnirush.ai/omnirush/device/me",
+  gatewayUrl: "https://omnirush.ai/omnirush/v1",
+};
+
 // KiloCode OAuth Configuration (Custom Device Auth Flow)
 export const KILOCODE_CONFIG = {
   apiBaseUrl: "https://api.kilo.ai",
@@ -526,4 +536,5 @@ export const PROVIDERS = {
   ZED: "zed",
   ZED_HOSTED: "zed-hosted",
   MUSE_CODE: "muse-code",
+  OMNIRUSH: "omnirush",
 };

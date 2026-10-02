@@ -70,6 +70,7 @@ const NO_PKCE_DEVICE_CODE_PROVIDERS = new Set([
   "grok-cli",
   "ghe-copilot",
   "muse-code",
+  "omnirush",
 ]);
 
 /**

@@ -239,6 +239,7 @@ import { hcnsecProvider } from "./registry/hcnsec/index.ts";
 import { promptqlProvider } from "./registry/promptql/index.ts";
 import { hyperagentProvider } from "./registry/hyperagent/index.ts";
 import { muse_codeProvider } from "./registry/muse-code/index.ts";
+import { omnirushProvider } from "./registry/omnirush/index.ts";
 import { naga_acProvider } from "./registry/naga-ac/index.ts";
 import { chatanywhereProvider } from "./registry/chatanywhere/index.ts";
 import { zyloApiProvider } from "./registry/zylo-api/index.ts";
@@ -516,6 +517,7 @@ export const REGISTRY: Record<string, RegistryEntry> = {
   promptql: promptqlProvider,
   hyperagent: hyperagentProvider,
   "muse-code": muse_codeProvider,
+  omnirush: omnirushProvider,
   "zylo-api": zyloApiProvider,
   unorouter: unorouterProvider,
   "naga-ac": naga_acProvider,

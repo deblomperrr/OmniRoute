@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 
 import { BaseExecutor, type ExecuteInput } from "./base.ts";
 import { mapNvidiaGlm52ReasoningParams } from "./base/reasoningEffort.ts";
-import { PROVIDERS, OAUTH_ENDPOINTS } from "../config/constants.ts";
+import { PROVIDERS } from "../config/constants.ts";
 import { getAccessToken } from "../services/tokenRefresh.ts";
 
 import {
@@ -13,6 +13,7 @@ import {
 import { getGigachatAccessToken } from "../services/gigachatAuth.ts";
 import { getRegistryEntry, requireCompatibleBaseUrl } from "../config/providerRegistry.ts";
 import { getModelTargetFormat } from "../config/providerModels.ts";
+import { getOmnirushUserAgent } from "../config/providerHeaderProfiles.ts";
 import {
   applyClientAnthropicBeta,
   normalizeAnthropicHeaderVariants,
@@ -275,6 +276,21 @@ export class DefaultExecutor extends BaseExecutor {
       }
     }
     switch (this.provider) {
+      case "omnirush": {
+        const custom =
+          typeof credentials?.providerSpecificData?.gatewayUrl === "string" &&
+          credentials.providerSpecificData.gatewayUrl.trim()
+            ? credentials.providerSpecificData.gatewayUrl.trim()
+            : typeof credentials?.providerSpecificData?.baseUrl === "string" &&
+                credentials.providerSpecificData.baseUrl.trim()
+              ? credentials.providerSpecificData.baseUrl.trim()
+              : null;
+        if (custom) {
+          const clean = custom.replace(/\/+$/, "");
+          return clean.endsWith("/responses") ? clean : `${clean}/responses`;
+        }
+        return this.config.baseUrl;
+      }
       case "perplexity-agent":
         return this.config.baseUrl;
       case "openai": {
@@ -497,6 +513,10 @@ export class DefaultExecutor extends BaseExecutor {
         break;
       }
       case "gigachat":
+        headers["Authorization"] = `Bearer ${credentials.accessToken || effectiveKey}`;
+        break;
+      case "omnirush":
+        headers["User-Agent"] = getOmnirushUserAgent();
         headers["Authorization"] = `Bearer ${credentials.accessToken || effectiveKey}`;
         break;
       case "clarifai": {

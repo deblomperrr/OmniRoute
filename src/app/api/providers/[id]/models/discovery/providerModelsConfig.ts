@@ -21,6 +21,7 @@ import {
   KIMI_CODING_MODELS_URL,
 } from "@omniroute/open-sse/config/providers/registry/kimi/coding/runtime.ts";
 import { ALIBABA_MODEL_STUDIO_MODELS } from "@omniroute/open-sse/config/providers/registry/alibaba/index.ts";
+import { getOmnirushUserAgent } from "@omniroute/open-sse/config/providerHeaderProfiles.ts";
 import { QWEN_CLOUD_TEXT_MODELS } from "@omniroute/open-sse/config/providers/registry/qwen-cloud/index.ts";
 import { filterAlibabaFreeEligibleModels } from "@omniroute/open-sse/services/alibabaFreeTierDiscovery.ts";
 import { shouldUseLiveAlibabaFreeModelDiscovery } from "@omniroute/open-sse/services/alibabaFreeTier.ts";
@@ -436,6 +437,32 @@ export const XAI_MODELS_CONFIG: ProviderModelsConfigEntry = {
   },
 };
 
+export const OMNIRUSH_MODELS_CONFIG: ProviderModelsConfigEntry = {
+  url: "https://omnirush.ai/omnirush/v1/models",
+  method: "GET",
+  buildHeaders: (token) => ({
+    Accept: "application/json",
+    Authorization: `Bearer ${token}`,
+    "User-Agent": getOmnirushUserAgent(),
+  }),
+  parseResponse: (data: any) => {
+    const list = Array.isArray(data?.data)
+      ? data.data
+      : Array.isArray(data?.payload?.data)
+        ? data.payload.data
+        : [];
+    return list.map((m: any) => ({
+      id: m.id,
+      name: m.display_name || m.name || m.id,
+      context_length: m.limits?.context || 400000,
+      max_tokens: m.limits?.output || 128000,
+      supports_reasoning:
+        !!m.capabilities?.reasoning ||
+        (Array.isArray(m.reasoning_levels) && m.reasoning_levels.length > 0),
+    }));
+  },
+};
+
 /**
  * Resolve the live-discovery config for xai-oauth when the
  * XAI_OAUTH_LIVE_MODEL_DISCOVERY flag is on, or `undefined` when it is off
@@ -604,6 +631,9 @@ export const PROVIDER_MODELS_CONFIG: Record<string, ProviderModelsConfigEntry> =
   },
   "kimi-coding": {
     ...KIMI_CODING_MODELS_CONFIG,
+  },
+  omnirush: {
+    ...OMNIRUSH_MODELS_CONFIG,
   },
   "kimi-coding-apikey": {
     ...KIMI_CODING_MODELS_CONFIG,

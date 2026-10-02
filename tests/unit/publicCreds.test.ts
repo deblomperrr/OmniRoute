@@ -137,3 +137,8 @@ test("decoded values are stable across calls (no internal state)", () => {
   assert.equal(b, c);
   assert.ok(a.length > 0);
 });
+
+test("resolvePublicCred('omnirush_id') returns the public omnirush CLI client id", () => {
+  const v = resolvePublicCred("omnirush_id");
+  assert.equal(v, "omnirush-cli");
+});

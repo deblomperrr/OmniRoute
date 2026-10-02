@@ -59,6 +59,7 @@ import { refreshKiroToken } from "./tokenRefresh/providers/kiro.ts";
 import { refreshQoderToken } from "./tokenRefresh/providers/qoder.ts";
 import { refreshGitHubToken } from "./tokenRefresh/providers/github.ts";
 import { refreshCopilotToken } from "./tokenRefresh/providers/copilot.ts";
+import { refreshOmnirushToken } from "./tokenRefresh/providers/omnirush.ts";
 
 export {
   refreshCodebuddyCnToken,
@@ -457,6 +458,14 @@ async function _getAccessTokenInternal(provider, credentials, log, proxyConfig: 
     case "codebuddy-cn":
       return await refreshCodebuddyCnToken(credentials.refreshToken, log, proxyConfig);
 
+    case "omnirush":
+      return await refreshOmnirushToken(
+        credentials.refreshToken,
+        credentials.providerSpecificData,
+        log,
+        proxyConfig
+      );
+
     default:
       // Fallback to generic OAuth refresh for unknown providers
       return refreshAccessToken(provider, credentials.refreshToken, credentials, log, proxyConfig);
@@ -489,6 +498,7 @@ export function supportsTokenRefresh(provider) {
     "gitlab-duo",
     "codebuddy-cn",
     "cursor",
+    "omnirush",
   ]);
   if (explicitlySupported.has(provider)) return true;
   const config = PROVIDERS[provider];
@@ -600,12 +610,7 @@ export async function getAccessToken(
   // the legacy `connectionId`-less path would silently swallow the callback,
   // leaving DB rows out of sync with rotated tokens (Codex/OpenAI). We still
   // resolve the promise to all waiters with the refreshed credentials.
-  const refreshPromise = _getAccessTokenWithStalenessCheck(
-    provider,
-    credentials,
-    log,
-    proxyConfig
-  )
+  const refreshPromise = _getAccessTokenWithStalenessCheck(provider, credentials, log, proxyConfig)
     .then(async (result) => {
       if (result?.accessToken && effectiveOnPersist) {
         // #4038: same compare-and-swap guard as Layer 1 — skip the persist if a concurrent

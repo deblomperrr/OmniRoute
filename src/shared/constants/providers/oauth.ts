@@ -322,4 +322,19 @@ export const OAUTH_PROVIDERS = {
     authHint:
       "Sign in with the Muse Code device flow (same as `muse login` / CLIProxyAPI `-meta-login`) to use a Muse subscription, or paste a META_API_KEY. Device login keeps the durable dca token and mints the inference key; a 401 remints that key. Wire format is OpenAI Responses (POST /responses).",
   },
+  omnirush: {
+    id: "omnirush",
+    serviceKinds: ["llm"],
+    alias: "omr",
+    name: "OmniRush",
+    icon: "bolt",
+    color: "#6366F1",
+    textIcon: "OMR",
+    website: "https://omnirush.ai",
+    subscriptionRisk: true,
+    riskNoticeVariant: "oauth",
+    passthroughModels: true,
+    authHint:
+      "Authenticate via OmniRush device code flow (approve in omnirush.ai/console) to route high-speed inference for GPT-6 Astra, GPT-6 Sol, GPT-5.6 Sol and Muse Spark. Wire format is OpenAI Responses (POST /responses).",
+  },
 };

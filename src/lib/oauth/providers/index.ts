@@ -32,6 +32,7 @@ import { codebuddyCn } from "./codebuddy-cn";
 import { zed } from "./zed";
 import { zedHosted } from "./zed-hosted";
 import { museCode } from "./muse-code";
+import { omnirush } from "./omnirush";
 
 export const PROVIDERS = {
   claude,
@@ -66,6 +67,7 @@ export const PROVIDERS = {
   zed,
   "zed-hosted": zedHosted,
   "muse-code": museCode,
+  omnirush,
 };
 
 export default PROVIDERS;

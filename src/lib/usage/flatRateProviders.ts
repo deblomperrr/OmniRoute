@@ -55,6 +55,8 @@ const FLAT_RATE_SUBSCRIPTION_PROVIDER_IDS: ReadonlySet<string> = new Set([
   // per-token rows price each call at the UNDERLYING model's metered rate and the
   // analytics overstatement is large rather than marginal (#11149).
   "opencode-go",
+  "omnirush", // OmniRush subscription / device allowance
+  "omr",
 ]);
 
 /**

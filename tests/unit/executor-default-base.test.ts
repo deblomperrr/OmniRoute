@@ -19,6 +19,7 @@ import {
   CONTEXT_1M_BETA_HEADER,
 } from "../../open-sse/services/claudeCodeCompatible.ts";
 import { runWithCapture } from "../../open-sse/utils/providerRequestLogging.ts";
+import { getOmnirushUserAgent } from "../../open-sse/config/providerHeaderProfiles.ts";
 
 class TestExecutor extends BaseExecutor {
   constructor(config = {}) {
@@ -521,6 +522,40 @@ test("DefaultExecutor.buildHeaders handles Snowflake PATs and GigaChat access to
   assert.equal(snowflakeJwtHeaders.Authorization, "Bearer jwt-token");
   assert.equal(snowflakeJwtHeaders["X-Snowflake-Authorization-Token-Type"], "KEYPAIR_JWT");
   assert.equal(gigachatHeaders.Authorization, "Bearer gigachat-token");
+});
+
+test("DefaultExecutor handles OmniRush headers and custom gateway resolution", () => {
+  const omnirush = new DefaultExecutor("omnirush");
+
+  const headersWithAccessToken = omnirush.buildHeaders({ accessToken: "omr_access_123" }, false);
+  assert.equal(headersWithAccessToken.Authorization, "Bearer omr_access_123");
+  assert.equal(headersWithAccessToken["User-Agent"], getOmnirushUserAgent());
+
+  const headersWithEffectiveKey = omnirush.buildHeaders({ apiKey: "omr_api_456" }, false);
+  assert.equal(headersWithEffectiveKey.Authorization, "Bearer omr_api_456");
+  assert.equal(headersWithEffectiveKey["User-Agent"], getOmnirushUserAgent());
+
+  // Default gateway
+  const defaultUrl = omnirush.buildUrl("gpt-6-astra", true, 0);
+  assert.equal(defaultUrl, "https://omnirush.ai/omnirush/v1/responses");
+
+  // Custom gatewayUrl without /responses suffix
+  const customGateway = omnirush.buildUrl("gpt-6-astra", true, 0, {
+    providerSpecificData: { gatewayUrl: "https://custom.omnirush.ai/omnirush/v1" },
+  });
+  assert.equal(customGateway, "https://custom.omnirush.ai/omnirush/v1/responses");
+
+  // Custom gatewayUrl with /responses suffix
+  const customGatewayWithSuffix = omnirush.buildUrl("gpt-6-astra", true, 0, {
+    providerSpecificData: { gatewayUrl: "https://custom.omnirush.ai/omnirush/v1/responses" },
+  });
+  assert.equal(customGatewayWithSuffix, "https://custom.omnirush.ai/omnirush/v1/responses");
+
+  // Custom baseUrl fallback
+  const customBase = omnirush.buildUrl("gpt-6-astra", true, 0, {
+    providerSpecificData: { baseUrl: "https://fallback.omnirush.ai/v1/" },
+  });
+  assert.equal(customBase, "https://fallback.omnirush.ai/v1/responses");
 });
 
 test("DefaultExecutor.buildHeaders rotates extra API keys and builds Claude Code compatible headers", () => {

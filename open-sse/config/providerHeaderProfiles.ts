@@ -258,3 +258,11 @@ export function getCursorRegistryHeaders(
     "User-Agent": getCursorUserAgent(version),
   };
 }
+
+export function getOmnirushUserAgent(): string {
+  const version =
+    (typeof process !== "undefined" && process.env?.OMNIRUSH_VERSION?.trim()) || "1.0.5";
+  const platform = typeof process !== "undefined" ? process.platform : "linux";
+  const arch = typeof process !== "undefined" ? process.arch : "x64";
+  return `omnirush/${version} (${platform}; ${arch})`;
+}

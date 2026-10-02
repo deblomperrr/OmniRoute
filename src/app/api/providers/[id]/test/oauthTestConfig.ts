@@ -11,6 +11,7 @@ import {
   ANTIGRAVITY_REQUIRES_MANUAL_PROJECT,
 } from "@omniroute/open-sse/services/antigravityProjectBootstrap.ts";
 import { isGeoBlockedError } from "@omniroute/open-sse/services/errorClassifier.ts";
+import { getOmnirushUserAgent } from "@omniroute/open-sse/config/providerHeaderProfiles.ts";
 
 // Real model-surface probe for antigravity/agy. The previous probe only hit the
 // OAuth userinfo endpoint, which is NOT geo-restricted — so "Test Connection"
@@ -249,6 +250,22 @@ export const OAUTH_TEST_CONFIG: Record<string, OAuthTestConfigEntry> = {
   "muse-code": {
     // Minted Muse inference keys have no advertised expiry. Validate presence;
     // remint from the stored dca token is the refresh path (CLIProxyAPI parity).
+    checkExpiry: true,
+    refreshable: true,
+  },
+  omnirush: {
+    getUrl: (connection: any) => {
+      const gatewayUrl =
+        connection?.providerSpecificData?.gatewayUrl || "https://omnirush.ai/omnirush/v1";
+      const origin = gatewayUrl.replace(/\/+$/, "").replace(/\/v1$/, "");
+      return `${origin}/device/me`;
+    },
+    method: "GET",
+    authHeader: "Authorization",
+    authPrefix: "Bearer ",
+    extraHeaders: {
+      "User-Agent": getOmnirushUserAgent(),
+    },
     checkExpiry: true,
     refreshable: true,
   },

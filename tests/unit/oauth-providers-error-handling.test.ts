@@ -111,6 +111,25 @@ test("P1: _getAccessTokenInternal passes providerSpecificData to refreshMuseCode
   );
 });
 
+test("P1: _getAccessTokenInternal passes providerSpecificData to refreshOmnirushToken", async () => {
+  const src = await read("open-sse/services/tokenRefresh.ts");
+  assert.match(
+    src,
+    /case\s+["']omnirush["']:[\s\S]{1,300}providerSpecificData/,
+    "omnirush case must pass providerSpecificData"
+  );
+});
+
+test("P1: refreshOmnirushToken detects unrecoverable errors", async () => {
+  const src = await read("open-sse/services/tokenRefresh/providers/omnirush.ts");
+  assert.match(
+    src,
+    /export\s+async\s+function\s+refreshOmnirushToken\(/,
+    "refreshOmnirushToken must be exported"
+  );
+  assert.match(src, /unrecoverable_refresh_error/, "must return unrecoverable sentinel");
+});
+
 // ─── P1: GitHub Copilot sub-token health check ────────────────────────────────
 
 test("P1: GitHub Copilot sub-token is refreshed by tokenHealthCheck", async () => {

@@ -46,6 +46,7 @@ const {
   OPENFERENCE_CONFIG,
   ZED_HOSTED_CONFIG,
   MUSE_CODE_CONFIG,
+  OMNIRUSH_CONFIG,
 } = oauthModule;
 const { getAntigravityLoadCodeAssistMetadata } = antigravityHeadersModule;
 
@@ -77,6 +78,7 @@ const EXPECTED_PROVIDER_KEYS = [
   "zed",
   "zed-hosted",
   "muse-code",
+  "omnirush",
 ];
 
 const browserUrl = "http://localhost:20128/callback";
@@ -112,6 +114,7 @@ const EXPECTED_CONFIG_BY_PROVIDER = {
   zed: ZED_CONFIG,
   "zed-hosted": ZED_HOSTED_CONFIG,
   "muse-code": MUSE_CODE_CONFIG,
+  omnirush: OMNIRUSH_CONFIG,
 };
 
 const KIRO_REQUIRED_FIELDS = [
@@ -162,6 +165,7 @@ const REQUIRED_FIELDS_BY_PROVIDER = {
   // prettier-ignore
   "zed-hosted": ["webBaseUrl", "cloudBaseUrl", "llmBaseUrl", "userInfoUrl", "llmTokenUrl", "modelsUrl"],
   "muse-code": ["deviceCodeUrl", "tokenUrl", "clientId", "mintUrl"],
+  omnirush: ["deviceCodeUrl", "tokenUrl", "clientId", "refreshUrl", "userInfoUrl"],
 };
 
 function getByPath(object, path) {
@@ -451,7 +455,15 @@ test("Google OAuth callbacks stay on localhost when no custom credentials are co
 });
 
 test("device and import-token providers expose the flow-specific fields expected by their configs", () => {
-  const deviceProviders = ["kimi-coding", "github", "kiro", "amazon-q", "kilocode", "muse-code"];
+  const deviceProviders = [
+    "kimi-coding",
+    "github",
+    "kiro",
+    "amazon-q",
+    "kilocode",
+    "muse-code",
+    "omnirush",
+  ];
 
   for (const providerId of deviceProviders) {
     const provider = PROVIDERS[providerId];
@@ -791,6 +803,59 @@ test("Muse Code executes mocked device-code, mint, and dca-preserving mapTokens"
   assert.equal(mapped.email, "muse@example.com");
   assert.equal(mapped.providerSpecificData.dcaToken, "dca:device-access");
   assert.equal(mapped.providerSpecificData.subsTierName, "Power");
+});
+
+test("OmniRush executes mocked device-code and token poll flows", async () => {
+  useFetchSequence([
+    (url, init) => {
+      assert.equal(url, "https://omnirush.ai/omnirush/device/authorize");
+      assert.equal(init.method, "POST");
+      assert.match(init.headers["User-Agent"], /^omnirush\//);
+      return jsonResponse({
+        device_code: "omd_test_code",
+        user_code: "SNJ4-LMHV",
+        verification_uri: "https://omnirush.ai/console",
+        verification_uri_complete: "https://omnirush.ai/console?code=SNJ4-LMHV",
+        interval: 3,
+        expires_in: 600,
+      });
+    },
+    (url, init) => {
+      assert.equal(url, "https://omnirush.ai/omnirush/device/token");
+      assert.equal(init.method, "POST");
+      assert.match(init.headers["User-Agent"], /^omnirush\//);
+      const body = JSON.parse(init.body);
+      assert.equal(body.device_code, "omd_test_code");
+      return jsonResponse({
+        access_token: "omr_access_token",
+        refresh_token: "omr_refresh_token",
+        gateway_url: "https://omnirush.ai/omnirush/v1",
+      });
+    },
+    (url, init) => {
+      assert.equal(url, "https://omnirush.ai/omnirush/device/me");
+      assert.equal(init.headers.Authorization, "Bearer omr_access_token");
+      assert.match(init.headers["User-Agent"], /^omnirush\//);
+      return jsonResponse({
+        id: "user_123",
+        email: "user@example.com",
+        plan: "pro",
+      });
+    },
+  ]);
+
+  const device = await PROVIDERS["omnirush"].requestDeviceCode(OMNIRUSH_CONFIG);
+  const poll = await PROVIDERS["omnirush"].pollToken(OMNIRUSH_CONFIG, device.device_code);
+  const extra = await PROVIDERS["omnirush"].postExchange(poll.data);
+  const mapped = PROVIDERS["omnirush"].mapTokens(poll.data, extra);
+
+  assert.equal(device.user_code, "SNJ4-LMHV");
+  assert.equal(device.verification_uri_complete, "https://omnirush.ai/console?code=SNJ4-LMHV");
+  assert.equal(mapped.accessToken, "omr_access_token");
+  assert.equal(mapped.refreshToken, "omr_refresh_token");
+  assert.equal(mapped.email, "user@example.com");
+  assert.equal(mapped.providerSpecificData.gatewayUrl, "https://omnirush.ai/omnirush/v1");
+  assert.equal(mapped.providerSpecificData.plan, "pro");
 });
 
 test("GitHub executes mocked device-code and profile enrichment flows", async () => {
