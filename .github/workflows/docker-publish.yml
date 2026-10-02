@@ -52,6 +52,8 @@ jobs:
       version: ${{ steps.version.outputs.version }}
       promote_latest: ${{ steps.version.outputs.promote_latest }}
       skip: ${{ steps.version.outputs.skip }}
+      image_name: ${{ steps.version.outputs.image_name }}
+      ghcr_image_name: ${{ steps.version.outputs.ghcr_image_name }}
     env:
       IMAGE_NAME: ${{ vars.DOCKERHUB_REPOSITORY || secrets.DOCKERHUB_REPOSITORY || ((secrets.DOCKERHUB_USERNAME || secrets.DOCKER_USERNAME) != '' && format('{0}/omniroute', secrets.DOCKERHUB_USERNAME || secrets.DOCKER_USERNAME)) || format('{0}/omniroute', github.repository_owner) }}
     steps:
@@ -74,6 +76,12 @@ jobs:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           set -euo pipefail
+
+          # 0) Normalize image names to lowercase (Docker repositories must be lowercase)
+          IMAGE_NAME=$(printf '%s' "$IMAGE_NAME" | tr '[:upper:]' '[:lower:]')
+          GHCR_IMAGE_NAME=$(printf 'ghcr.io/%s' "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "image_name=$IMAGE_NAME" >> "$GITHUB_OUTPUT"
+          echo "ghcr_image_name=$GHCR_IMAGE_NAME" >> "$GITHUB_OUTPUT"
 
           # 1) Resolve version/channel from the trigger. Only the current default
           # release branch publishes the mutable `next` channel; main keeps `main`.
@@ -160,14 +168,19 @@ jobs:
           - platform: linux/arm64
             arch: arm64
     env:
-      IMAGE_NAME: ${{ vars.DOCKERHUB_REPOSITORY || secrets.DOCKERHUB_REPOSITORY || ((secrets.DOCKERHUB_USERNAME || secrets.DOCKER_USERNAME) != '' && format('{0}/omniroute', secrets.DOCKERHUB_USERNAME || secrets.DOCKER_USERNAME)) || format('{0}/omniroute', github.repository_owner) }}
-      GHCR_IMAGE_NAME: ghcr.io/${{ github.repository }}
+      IMAGE_NAME: ${{ needs.prepare.outputs.image_name || vars.DOCKERHUB_REPOSITORY || secrets.DOCKERHUB_REPOSITORY || ((secrets.DOCKERHUB_USERNAME || secrets.DOCKER_USERNAME) != '' && format('{0}/omniroute', secrets.DOCKERHUB_USERNAME || secrets.DOCKER_USERNAME)) || format('{0}/omniroute', github.repository_owner) }}
+      GHCR_IMAGE_NAME: ${{ needs.prepare.outputs.ghcr_image_name }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
         with:
           persist-credentials: false
           fetch-depth: 0
+
+      - name: Normalize image tags to lowercase
+        run: |
+          echo "IMAGE_NAME=$(printf '%s' "${IMAGE_NAME}" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
+          echo "GHCR_IMAGE_NAME=$(printf '%s' "${GHCR_IMAGE_NAME:-ghcr.io/${{ github.repository }}}" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
 
       - name: Assert Docker Engine
         run: docker info
@@ -357,8 +370,8 @@ jobs:
       packages: write
       security-events: write
     env:
-      IMAGE_NAME: ${{ vars.DOCKERHUB_REPOSITORY || secrets.DOCKERHUB_REPOSITORY || ((secrets.DOCKERHUB_USERNAME || secrets.DOCKER_USERNAME) != '' && format('{0}/omniroute', secrets.DOCKERHUB_USERNAME || secrets.DOCKER_USERNAME)) || format('{0}/omniroute', github.repository_owner) }}
-      GHCR_IMAGE_NAME: ghcr.io/${{ github.repository }}
+      IMAGE_NAME: ${{ needs.prepare.outputs.image_name || vars.DOCKERHUB_REPOSITORY || secrets.DOCKERHUB_REPOSITORY || ((secrets.DOCKERHUB_USERNAME || secrets.DOCKER_USERNAME) != '' && format('{0}/omniroute', secrets.DOCKERHUB_USERNAME || secrets.DOCKER_USERNAME)) || format('{0}/omniroute', github.repository_owner) }}
+      GHCR_IMAGE_NAME: ${{ needs.prepare.outputs.ghcr_image_name }}
       VERSION: ${{ needs.prepare.outputs.version }}
       PROMOTE_LATEST: ${{ needs.prepare.outputs.promote_latest }}
     steps:
@@ -367,6 +380,11 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
+
+      - name: Normalize image tags to lowercase
+        run: |
+          echo "IMAGE_NAME=$(printf '%s' "${IMAGE_NAME}" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
+          echo "GHCR_IMAGE_NAME=$(printf '%s' "${GHCR_IMAGE_NAME:-ghcr.io/${{ github.repository }}}" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
@@ -601,6 +619,6 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME || secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN || secrets.DOCKER_PASSWORD }}
-          repository: ${{ vars.DOCKERHUB_REPOSITORY || secrets.DOCKERHUB_REPOSITORY || ((secrets.DOCKERHUB_USERNAME || secrets.DOCKER_USERNAME) != '' && format('{0}/omniroute', secrets.DOCKERHUB_USERNAME || secrets.DOCKER_USERNAME)) || format('{0}/omniroute', github.repository_owner) }}
+          repository: ${{ needs.prepare.outputs.image_name || vars.DOCKERHUB_REPOSITORY || secrets.DOCKERHUB_REPOSITORY || ((secrets.DOCKERHUB_USERNAME || secrets.DOCKER_USERNAME) != '' && format('{0}/omniroute', secrets.DOCKERHUB_USERNAME || secrets.DOCKER_USERNAME)) || format('{0}/omniroute', github.repository_owner) }}
           short-description: "OmniRoute — Unified AI proxy. Route any LLM through one endpoint."
           readme-filepath: ./README.md
