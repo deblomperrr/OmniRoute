@@ -54,7 +54,6 @@ jobs:
         uses: actions/checkout@v7
         with:
           persist-credentials: false
-          ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/v{0}', inputs.version) || '' }}
           # Need full tag history for semver comparison when deciding :latest.
           fetch-depth: 0
 
@@ -162,7 +161,6 @@ jobs:
         uses: actions/checkout@v7
         with:
           persist-credentials: false
-          ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/v{0}', inputs.version) || '' }}
           fetch-depth: 0
 
       - name: Assert Docker Engine
@@ -362,7 +360,6 @@ jobs:
         uses: actions/checkout@v7
         with:
           persist-credentials: false
-          ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/v{0}', inputs.version) || '' }}
           fetch-depth: 0
 
       - name: Set up Docker Buildx
